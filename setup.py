@@ -13,7 +13,6 @@
 # limitations under the License.
 
 import os
-from sys import platform
 from typing import Dict, List, Tuple
 
 from setuptools import find_packages, setup
@@ -27,46 +26,38 @@ version_major_minor = version
 # load and overwrite version and release info from sparseml package
 exec(open(os.path.join("src", "sparsify", "version.py")).read())
 print(f"loaded version {version} from src/sparsify/version.py")
-version_nm_deps = f"{version_major_minor}.0"
 
 _PACKAGE_NAME = "sparsify" if is_release else "sparsify-nightly"
 
-
 _deps = [
-    "apispec>=3.0.0",
-    "flasgger>=0.9.0",
-    "Flask>=1.0.0",
-    "Flask-Cors>=3.0.0",
-    "marshmallow>=3.0.0",
-    "peewee>=3.0.0",
+    "pydantic>=1.8.2,<2.0.0",
+    "pyyaml>=5.0.0",
+    "click~=8.0.0",
+    "tensorboard>=2.0.0",
+    "setuptools>=56.0.0",
+    "optuna>=3.0.2",
+    "onnxruntime-gpu",
 ]
 
 _nm_deps = [
-    f"{'sparsezoo' if is_release else 'sparsezoo-nightly'}~={version_nm_deps}",
-    f"{'sparseml' if is_release else 'sparseml-nightly'}~={version_nm_deps}",
+    f"{'sparsezoo' if is_release else 'sparsezoo-nightly'}~={version_major_minor}",
+    f"{'deepsparse' if is_release else 'deepsparse-nightly'}~={version_major_minor}",
+    f"{'sparseml' if is_release else 'sparseml-nightly'}[torchvision,yolov5]~={version_major_minor}",  # noqa E501
 ]
 
-
 _dev_deps = [
-    "beautifulsoup4==4.9.3",
     "black>=20.8b1",
     "flake8>=3.8.3",
     "isort>=5.7.0",
-    "m2r2~=0.2.7",
-    "mistune==0.8.4",
-    "myst-parser~=0.14.0",
-    "rinohtype>=0.4.2",
-    "sphinx>=3.4.0",
-    "sphinx-copybutton>=0.3.0",
-    "sphinx-markdown-tables>=0.0.15",
-    "sphinx-multiversion==0.2.4",
-    "sphinx-rtd-theme",
     "pytest>=6.0.0",
     "wheel>=0.36.2",
+    "fastai>=2.7.7",
 ]
 
-if platform == "linux" or platform == "linux2":
-    _deps.extend(["pysqlite3-binary>=0.4.0"])
+_llm_deps = [
+    "llm-foundry==0.2.0",
+    f"{'nm-transformers' if is_release else 'nm-transformers-nightly'}",
+]
 
 
 def _setup_packages() -> List:
@@ -84,11 +75,19 @@ def _setup_install_requires() -> List:
 
 
 def _setup_extras() -> Dict:
-    return {"dev": _dev_deps}
+    return {"dev": _dev_deps, "nm": _nm_deps, "llm": _llm_deps}
 
 
 def _setup_entry_points() -> Dict:
-    return {"console_scripts": ["sparsify=sparsify.app:main"]}
+    return {
+        "console_scripts": [
+            "sparsify.run=sparsify.cli.run:main",
+            "sparsify.login=sparsify.login:main",
+            "sparsify.check_environment=sparsify.check_environment.main:main",
+            "sparsify.llm_finetune=sparsify.auto.tasks.finetune.finetune:parse_args_and_run",  # noqa E501
+            "sparisfy.llama_export=sparsify.auto.tasks.transformers.llama:llama_export",
+        ]
+    }
 
 
 def _setup_long_description() -> Tuple[str, str]:
@@ -120,11 +119,14 @@ setup(
     install_requires=_setup_install_requires(),
     extras_require=_setup_extras(),
     entry_points=_setup_entry_points(),
-    python_requires=">=3.7.0",
+    python_requires=">=3.8.0",
     classifiers=[
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3 :: Only",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Intended Audience :: Developers",
         "Intended Audience :: Education",
         "Intended Audience :: Information Technology",
